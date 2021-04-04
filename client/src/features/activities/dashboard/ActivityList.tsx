@@ -4,14 +4,16 @@ import { Activity } from "../../../app/models/activity";
 
 interface Props {
   activities: Activity[];
-  selectActivity: (id: String) => void;
-  deleteActivity: (id: String) => void;
+  selectActivity: (id: string) => void;
+  deleteActivity: (id: string) => void;
+  deleting: string | undefined;
 }
 
 export default function ActivityList({
   activities,
   selectActivity,
   deleteActivity,
+  deleting,
 }: Props) {
   return (
     <Segment>
@@ -35,6 +37,7 @@ export default function ActivityList({
                   color="blue"
                 />
                 <Button
+                  loading={deleting === activity.id}
                   onClick={() => deleteActivity(activity.id)}
                   floated="right"
                   content="Delete"
