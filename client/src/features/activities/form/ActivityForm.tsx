@@ -1,18 +1,24 @@
-import React, { ChangeEvent, useState } from "react";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Button, Form, Segment } from "semantic-ui-react";
 import { useStore } from "../../../app/stores/store";
+import { Link, useHistory, useParams } from "react-router-dom";
+import LoadingComponent from "../../../app/layout/LoadComponent";
+import { v4 as uuid } from "uuid";
 
 export default observer(function ActivityForm() {
+  const history = useHistory();
   const { activityStore } = useStore();
   const {
     createActivity,
     updateActivity,
-    selectedActivity,
+    loadActivity,
     loading,
-    closeForm,
+    loadingInitial,
+    setLoadingInitial,
   } = activityStore;
-  const initialState = selectedActivity ?? {
+  const { id } = useParams<{ id: string }>();
+  const [activity, setActivity] = useState({
     id: "",
     title: "",
     category: "",
@@ -20,15 +26,28 @@ export default observer(function ActivityForm() {
     date: "",
     city: "",
     venue: "",
-  };
+  });
 
-  const [activity, setActivity] = useState(initialState);
+  useEffect(() => {
+    if (id && id !== "new") {
+      loadActivity(id).then((a) => setActivity(a!));
+    }
+    setLoadingInitial(false);
+  }, [id, loadActivity, setLoadingInitial]);
 
   function handleSubmit() {
-    if (activity.id) {
-      updateActivity(activity);
+    if (!activity.id) {
+      const newActivity = {
+        ...activity,
+        id: uuid(),
+      };
+      createActivity(newActivity).then(() =>
+        history.push(`/activities/${newActivity.id}`)
+      );
     } else {
-      createActivity(activity);
+      updateActivity(activity).then(() => {
+        history.push(`/activities/${activity.id}`);
+      });
     }
   }
 
@@ -40,6 +59,10 @@ export default observer(function ActivityForm() {
       ...prevState,
       [name]: value,
     }));
+  }
+
+  if (loadingInitial) {
+    return <LoadingComponent content="Loading..." />;
   }
 
   return (
@@ -90,7 +113,8 @@ export default observer(function ActivityForm() {
           content="Submit"
         />
         <Button
-          onClick={closeForm}
+          as={Link}
+          to="/activities"
           floated="right"
           type="button"
           content="Cancel"
